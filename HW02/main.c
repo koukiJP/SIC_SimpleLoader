@@ -42,6 +42,7 @@
 #define oMAX 26
 
 FILE *f;
+FILE *fo;
 int show_addr = 0;
 char addr[20];
 char fname[20];
@@ -60,6 +61,8 @@ int op = 0;
 int indexed = 0;
 int operand = 0;
 int running = 0;
+int runed = 0;
+int showed = 0;
 FILE *in;
 FILE *out;
 
@@ -113,7 +116,7 @@ int readline () {
     printf("SIC Simulator> ");
 do {
     fgets( c_line, 30, stdin );
-
+    if(fo) printf("%s",c_line);
     i = strlen( c_line );
     c_line[i-1] = '\0';
     // printf("Line = [%s], i = [%d]\n", c_line, i);
@@ -121,12 +124,20 @@ do {
 
     sscanf( c_line, "%s", cmd );
     // printf("Command = [%s]\n", cmd );
-
-    if (strcmp( cmd, s_command[0]) == 0) tmp = cLOAD; 
-    else if (strcmp( cmd, s_command[1]) == 0) tmp = cSHOW; 
+    if (strcmp( cmd, s_command[0]) == 0) {
+        sscanf( c_line, "%s %s %x", cmd , fname ,&start_add);
+        tmp = cLOAD;
+    } 
+    else if (strcmp( cmd, s_command[1]) == 0) {
+        sscanf( c_line, "%s %x", cmd ,&start_add);
+        tmp = cSHOW; 
+    }
     else if (strcmp( cmd, s_command[2]) == 0) tmp = cUNLOAD; 
     else if (strcmp( cmd, s_command[3]) == 0) tmp = cEXIT; 
-    else if (strcmp( cmd, s_command[4]) == 0) tmp = cRUN; 
+    else if (strcmp( cmd, s_command[4]) == 0) {
+        sscanf( c_line, "%s %x", cmd ,&start_add);
+        tmp = cRUN; 
+    }
     // printf("Command number is %d.\n", tmp);
 
     c_line[0] = '\0';
@@ -187,9 +198,11 @@ void rd_end () {
 /* Write your own s_load here. */
 void s_load () {
 
-    printf("SIC Load>");
-    scanf("%s %x",fname,&start_add);
-    f = fopen(fname,"r");
+    // printf("SIC Load>");
+    // sscanf(fname,"%s %x",fname,&start_add);
+    char dir[20];
+    sprintf(dir , "TEST/%s",fname);
+    f = fopen(dir,"r");
     if(f == NULL) {
         printf("obj file open failed!");
         system("PAUSE");
@@ -220,9 +233,16 @@ void format(int _addr){
 
 /* Write your own s_show here. */
 void s_show () {
-    printf("SIC Show>");
-    scanf("%x",&show_addr);
-    f = fopen("memorySIM.txt","w");
+    
+    // printf("SIC Show>");
+    // scanf("%x",&show_addr);
+    char dir[30];
+    
+    if(runed == 1)
+        sprintf(dir,"MEM/%s_BEFORE.txt",fname);
+    else
+        sprintf(dir,"MEM/%s_AFTER.txt",fname);
+    f = fopen(dir,"w");
     if(f == NULL) {
         printf("obj file open failed!");
         system("PAUSE");
@@ -230,7 +250,7 @@ void s_show () {
     }
     int state = 0;
     int state_n = 0;
-    int i = show_addr*2;
+    int i = start_add*2;
     
     format(i);
     for( ; i < mem_size + start_add*2 - 1 ; i++){
@@ -256,7 +276,7 @@ void s_show () {
 void s_unload () {
     free(memory);
     prog_len = 0 , start_add = 0 , curr_add = 0 , mem_size =0;
-    loaded = 0;
+    loaded = 0 , runed = 0;
 }
 
 
@@ -355,10 +375,10 @@ void show_reg () {
 /* Write your own s_run here. */
 void s_run () {
     init_run();
-    printf("SIC Run>");
-    scanf("%x",&show_addr);
-    in = fopen("RD.txt","r");
-    out = fopen("WD.txt","w");
+    // printf("SIC Run>");
+    // scanf("%x",&show_addr);
+    in = fopen("Device/RD.txt","r");
+    out = fopen("Device/WD.txt","w");
     while (reg_PC < prog_len + start_add)
     {
         get_op();   
@@ -368,11 +388,14 @@ void s_run () {
     }
     printf("\n");
     show_reg();
+    runed = 1;
     fclose(in);
     fclose(out);
 }
 
 int main () {
+    fo = freopen("SampleRun.txt","r",stdin);
+       
     int comm = 0;
 
     comm = readline();

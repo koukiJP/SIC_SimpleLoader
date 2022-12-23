@@ -1,0 +1,10 @@
+load test1.obj 1000
+show 1000
+run 1000
+show 1000
+unload
+load test2.obj 2000
+show 2000
+run 2000
+show 2000
+exit
